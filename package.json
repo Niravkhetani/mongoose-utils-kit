@@ -1,0 +1,39 @@
+{
+  "name": "mongoose-plugins",
+  "version": "1.0.0",
+  "description": "Reusable Mongoose plugins like toJSON, paginate, and aggregation.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://@github.com/Niravkhetani/mongoose-plugins.git"
+  },
+  "keywords": [
+    "mongoose",
+    "plugin",
+    "toJSON",
+    "pagination",
+    "aggregation"
+  ],
+  "author": "Nirav Khetani",
+  "license": "MIT",
+  "dependencies": {
+    "mongoose": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.2",
+    "mongodb-memory-server": "^10.1.4",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
+  },
+  "bugs": {
+    "url": "https://github.com/Niravkhetani/mongoose-plugins/issues"
+  },
+  "homepage": "https://github.com/Niravkhetani/mongoose-plugins#readme"
+}
