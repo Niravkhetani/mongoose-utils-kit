@@ -1,6 +1,6 @@
 {
   "name": "mongoose-utils-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Reusable Mongoose plugins like toJSON, paginate, and aggregation.",
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
