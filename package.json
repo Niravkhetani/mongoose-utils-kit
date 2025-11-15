@@ -1,17 +1,17 @@
 {
-  "name": "mongoose-plugins",
+  "name": "mongoose-utils-kit",
   "version": "1.0.0",
   "description": "Reusable Mongoose plugins like toJSON, paginate, and aggregation.",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf dist && tsc",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://@github.com/Niravkhetani/mongoose-plugins.git"
+    "url": "git+https://@github.com/Niravkhetani/mongoose-utils-kit.git"
   },
   "keywords": [
     "mongoose",
@@ -23,7 +23,8 @@
   "author": "Nirav Khetani",
   "license": "MIT",
   "dependencies": {
-    "mongoose": "^7.0.0"
+    "mongoose": "^7.0.0",
+    "rimraf": "^6.1.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

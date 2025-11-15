@@ -1,12 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "ES2020",
     "module": "CommonJS",
+    "outDir": "./dist" /* Output directory for all compiled files */,
+    "declaration": true /* CRITICAL: Generates .d.ts files */,
+    "declarationDir": "./dist/src" /* NEW: Puts declaration files exactly where package.json expects them */,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "outDir": "./dist",
-    "baseUrl": "."
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": ["src/**/*"] /* Explicitly tells TSC to compile everything in src */,
+  "exclude": ["node_modules", "dist", "test"]
 }
