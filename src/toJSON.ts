@@ -2,9 +2,6 @@
 
 import { Schema, Document, ToObjectOptions } from 'mongoose';
 
-// Placeholder for an external helper used in your code.
-const parseObject = <T>(obj: T): T => obj;
-
 // The Mongoose document object that is being transformed (the `doc` parameter)
 type DocType = Document & Record<string, any>;
 // The raw JavaScript object representation of the document (`ret` parameter)
@@ -160,10 +157,6 @@ export const toJSON = (schema: Schema<any>): void => {
 
       delete ret._id;
       delete ret.__v;
-      delete ret.password;
-
-      // Assuming parseObject is available/imported
-      ret = parseObject(ret);
 
       // Apply alias mapping
       if (options.alias) {

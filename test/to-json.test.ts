@@ -102,7 +102,21 @@ describe('ToJSON Plugin Tests', () => {
     expect(json.tags).toBeUndefined();
   });
 
-  it('6. should handle aliases passed as an object', async () => {
+  it('6. password removal is driven by private:true on schema, not hardcoded', async () => {
+    // This test documents that password is removed because the schema marks it private: true,
+    // not because of any hardcoded `delete ret.password` in the plugin.
+    const userDoc = await TestUserModel.create(userData);
+    const json = userDoc.toJSON();
+
+    // password is private: true on the schema → removed by the plugin's private-field sweep
+    expect(json.password).toBeUndefined();
+    // privateField is also private: true → also removed
+    expect(json.privateField).toBeUndefined();
+    // Non-private fields remain
+    expect(json.name).toBe('Test Alias');
+  });
+
+  it('7. should handle aliases passed as an object', async () => {
     const userDoc = await TestUserModel.create(userData);
 
     // FIX: Explicitly passing a compatible Mongoose option (virtuals: true)

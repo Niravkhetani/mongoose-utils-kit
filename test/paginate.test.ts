@@ -89,7 +89,27 @@ describe('Paginate Plugin Tests', () => {
     expect(true).toBe(true);
   });
 
-  it('7. should apply custom aggregation pipeline', async () => {
+  it('7. should sort by createdAt:desc without rewriting the sort key', async () => {
+    await seedUsers();
+    const options: PaginateOptions = { sortBy: 'createdAt:desc', limit: 2 };
+    const result: QueryResult<IUser> = await UserModel.paginate({}, options);
+
+    // Results should be ordered newest-first; just verify the query succeeds and returns data
+    expect(result.results.length).toBe(2);
+    expect(result.totalResults).toBe(5);
+  });
+
+  it('8. should throw on invalid page value', async () => {
+    await expect(UserModel.paginate({}, { page: 0 })).rejects.toThrow(/invalid page/i);
+    await expect(UserModel.paginate({}, { page: -2 })).rejects.toThrow(/invalid page/i);
+  });
+
+  it('9. should throw on invalid limit value', async () => {
+    await expect(UserModel.paginate({}, { limit: 0 })).rejects.toThrow(/invalid limit/i);
+    await expect(UserModel.paginate({}, { limit: -1 })).rejects.toThrow(/invalid limit/i);
+  });
+
+  it('10. should apply custom aggregation pipeline', async () => {
     await seedUsers();
 
     // Aggregate: Find all users, add 10 to their score, and filter by score > 410
@@ -104,7 +124,20 @@ describe('Paginate Plugin Tests', () => {
     expect(result.results.length).toBe(1); // Only Eve (500 + 10 = 510) remains
     expect(result.totalResults).toBe(1);
     expect(result.results[0].name).toBe('Eve');
-    // Check if the aggregation field is present
     expect(result.results[0].adjustedScore).toBe(510);
+  });
+
+  it('11. aggregation count should reflect total matched docs, not windowed subset', async () => {
+    await seedUsers();
+
+    // All 5 users match; paginate to page 1 with limit 2
+    const aggregation: PaginateOptions['aggregation'] = [{ $match: {} }];
+    const options: PaginateOptions = { aggregation, page: 1, limit: 2 };
+    const result: QueryResult<IUser> = await UserModel.paginate({}, options);
+
+    // totalResults must be 5 (all matched), not 2 (the windowed page size)
+    expect(result.totalResults).toBe(5);
+    expect(result.results.length).toBe(2);
+    expect(result.totalPages).toBe(3);
   });
 });

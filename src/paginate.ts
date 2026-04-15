@@ -131,28 +131,39 @@ export function paginate<T extends Document>(schema: Schema<T>): void {
     if (options.sortBy) {
       options.sortBy.split(',').forEach((sortOption) => {
         const [key, order] = sortOption.split(':');
+
+        if (!key || !key.trim()) {
+          throw new Error(`paginate: invalid sortBy format "${sortOption}". Expected "field:asc" or "field:desc".`);
+        }
+
         const sortOrder: SortOrder = order === 'desc' ? -1 : 1;
-
-        if (!key) throw new Error(`Invalid field "${key}" passed to sort()`);
-
-        if (key === 'name') sort[key] = sortOrder;
-        else if (key === 'date') sort.createdAt = sortOrder;
-        else sort[key] = sortOrder;
+        sort[key.trim()] = sortOrder;
       });
     } else {
       sort.createdAt = -1;
     }
 
     // Pagination setup
-    const page = (options.page && parseInt(options.page.toString(), 10)) || 1;
-    let limit = 10;
+    const rawPage = options.page !== undefined ? parseInt(options.page.toString(), 10) : 1;
+
+    if (options.page !== undefined && (isNaN(rawPage) || (rawPage !== -1 && rawPage < 1))) {
+      throw new Error(`paginate: invalid page "${options.page}". Must be a positive integer or -1 to fetch all records.`);
+    }
+
+    const page = rawPage;
+    let limit: number;
     let skip = 0;
 
     if (page === -1) {
-      limit = Number.MAX_SAFE_INTEGER;
+      // Fetch all — no limit or skip applied to the DB query
+      limit = 0;
       skip = 0;
     } else {
-      limit = options.limit && parseInt(options.limit.toString(), 10) > 0 ? parseInt(options.limit.toString(), 10) : 10;
+      const rawLimit = options.limit !== undefined ? parseInt(options.limit.toString(), 10) : 10;
+      if (options.limit !== undefined && (isNaN(rawLimit) || rawLimit < 1)) {
+        throw new Error(`paginate: invalid limit "${options.limit}". Must be a positive integer.`);
+      }
+      limit = rawLimit > 0 ? rawLimit : 10;
       skip = (page - 1) * limit;
     }
 
@@ -161,13 +172,23 @@ export function paginate<T extends Document>(schema: Schema<T>): void {
 
     // Aggregation-based pagination
     if (options.aggregation) {
-      const docsAggregate: Aggregate<T[]> = this.aggregate(options.aggregation).sort(sort).skip(skip).limit(limit);
+      // Build the data pipeline: user stages → sort → (skip+limit only when paginating)
+      let docsAggregate: Aggregate<T[]> = this.aggregate(options.aggregation).sort(sort);
+      if (page !== -1) {
+        docsAggregate = docsAggregate.skip(skip).limit(limit);
+      }
 
-      const countPipeline = [...options.aggregation, { $count: 'totalResults' }];
+      // Count pipeline: strip any trailing $limit / $skip / $sort the caller may have added
+      // so the count reflects ALL matching documents, not a windowed subset.
+      const paginationStageKeys = new Set(['$limit', '$skip', '$sort']);
+      const countBasePipeline = [...options.aggregation].filter(
+        (stage) => !Object.keys(stage).some((k) => paginationStageKeys.has(k)),
+      );
+      const countPipeline = [...countBasePipeline, { $count: 'totalResults' }];
       const countResult = await this.aggregate<{ totalResults: number }>(countPipeline);
 
       const totalResults = countResult.length > 0 ? countResult[0].totalResults : 0;
-      const totalPages = Math.ceil(totalResults / limit);
+      const totalPages = page === -1 ? 1 : Math.ceil(totalResults / limit);
       let results = await docsAggregate.exec();
 
       if (options.isShuffleRecord) results = results.sort(() => Math.random() - 0.5);
@@ -204,8 +225,11 @@ export function paginate<T extends Document>(schema: Schema<T>): void {
 
     // Normal query pagination
     const countPromise = this.countDocuments(filter).exec();
-    // Use QueryWithHelpers<T[], T> for initial assignment
-    let docsQuery: QueryWithHelpers<T[], T> = this.find(filter).sort(sort).skip(skip).limit(limit);
+    let docsQuery: QueryWithHelpers<T[], T> = this.find(filter).sort(sort);
+
+    if (page !== -1) {
+      docsQuery = docsQuery.skip(skip).limit(limit) as QueryWithHelpers<T[], T>;
+    }
 
     if (selectFields.length > 0) {
       docsQuery = docsQuery.select(selectFields.join(' ')) as QueryWithHelpers<T[], T>;
