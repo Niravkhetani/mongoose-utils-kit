@@ -4,6 +4,9 @@
   "description": "Reusable Mongoose plugins like toJSON, paginate, and aggregation.",
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rimraf dist && tsc",
     "test": "jest",
